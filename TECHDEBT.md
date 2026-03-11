@@ -81,9 +81,7 @@ Silent failures or truncated results above threshold.
 ## High (Fix During Phase 2)
 
 ### TD4: CSV Input Validation
-**Priority:** 13 | **Status:** Not Started | **Complexity:** 2 | **Value:** 5
-
-**Blocks:** F5 (Multi-Format CSV Support)
+**Priority:** 13 | **Status:** Fixed | **Complexity:** 2 | **Value:** 5
 
 CSV is permanent feature. Silent failures on wrong format unacceptable.
 
@@ -94,11 +92,11 @@ Parser assumes Apple Card format. Other CSVs produce garbage or crash.
 Core feature broken for non-Apple Card users.
 
 #### Tasks
-- [ ] Define expected headers for Apple Card
-- [ ] Check headers on upload before parsing
-- [ ] Return specific error for wrong format
-- [ ] Show user-friendly message with expected format
-- [ ] Prepare for format registry pattern
+- [x] Define expected headers for Apple Card
+- [x] Check headers on upload before parsing
+- [x] Return specific error for wrong format
+- [x] Show user-friendly message with expected format
+- [x] Prepare for format registry pattern
 
 ---
 
@@ -148,9 +146,7 @@ Regressions during Phase 2 integration will be time-consuming.
 ---
 
 ### TD7: Multi-Format CSV Architecture
-**Priority:** 13 | **Status:** Not Started | **Complexity:** 3 | **Value:** 5
-
-**Blocks:** F5 (Multi-Format CSV Support)
+**Priority:** 13 | **Status:** Fixed | **Complexity:** 3 | **Value:** 5
 
 No abstraction for multiple CSV formats.
 
@@ -161,12 +157,12 @@ Parser hardcoded for Apple Card. Adding Chase requires forking logic.
 Every new institution is messy one-off implementation.
 
 #### Tasks
-- [ ] Define FormatDefinition interface
-- [ ] Create format registry array
-- [ ] Extract Apple Card parser to module
-- [ ] Implement header-based format detection
-- [ ] Refactor parseCSV to use registry
-- [ ] Document adding new formats
+- [x] Define FormatDefinition interface
+- [x] Create format registry array
+- [x] Extract Apple Card parser to module
+- [x] Implement header-based format detection
+- [x] Refactor parseCSV to use registry
+- [x] Document adding new formats
 
 ---
 
@@ -245,6 +241,9 @@ Track when debt is added so it doesn't accumulate silently.
 ---
 
 ## Recently Fixed
+
+### TD4 & TD7: CSV Format Architecture (2026-03-10)
+Implemented format registry pattern in `src/lib/csv-formats.ts`. Supports Apple Card, Chase, Amex, Capital One. Auto-detects format on upload. Clear error messages for unrecognized formats.
 
 ### TD8: Google Drive Code Removal (2026-03-10)
 Removed abandoned Google Drive integration code. Files deleted: `src/lib/google-drive.ts`, `/api/auth/*`, `/api/drive/*`. UI cleaned from page.tsx.

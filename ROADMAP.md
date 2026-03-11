@@ -81,19 +81,19 @@ Quality of life. User controls insight detail level.
 ---
 
 ### F5: Multi-Format CSV Support
-**Priority:** 14 | **Status:** Planned | **Complexity:** 3 | **Value:** 5 | **Risk:** 1
+**Priority:** 14 | **Status:** Complete | **Complexity:** 3 | **Value:** 5 | **Risk:** 1
 
 Critical for real use. CSV is permanent data path.
 
 #### Tasks
-- [ ] Format registry data structure
-- [ ] Header detection on upload
-- [ ] Apple Card parser (exists, extract to module)
-- [ ] Chase CSV parser
-- [ ] American Express CSV parser
-- [ ] Capital One CSV parser
-- [ ] Unrecognized format error message
-- [ ] Format indicator in UI after detection
+- [x] Format registry data structure
+- [x] Header detection on upload
+- [x] Apple Card parser (exists, extract to module)
+- [x] Chase CSV parser
+- [x] American Express CSV parser
+- [x] Capital One CSV parser
+- [x] Unrecognized format error message
+- [x] Format indicator in UI after detection
 
 ---
 

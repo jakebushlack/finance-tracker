@@ -9,6 +9,11 @@ import {
   CATEGORIES,
   Category,
 } from "@/types";
+import {
+  parseCSVWithFormat,
+  getSupportedFormats,
+  type FormatDefinition,
+} from "@/lib/csv-formats";
 
 const CATEGORY_COLORS: Record<Category, string> = {
   Housing: "bg-blue-500",
@@ -22,40 +27,10 @@ const CATEGORY_COLORS: Record<Category, string> = {
   Other: "bg-slate-500",
 };
 
-function parseCSV(csvText: string): RawTransaction[] {
-  const lines = csvText.trim().split("\n");
-  if (lines.length < 2) return [];
-
-  const headers = lines[0].split(",").map((h) => h.trim().replace(/^"|"$/g, ""));
-  const transactions: RawTransaction[] = [];
-
-  for (let i = 1; i < lines.length; i++) {
-    const values: string[] = [];
-    let current = "";
-    let inQuotes = false;
-
-    for (const char of lines[i]) {
-      if (char === '"') {
-        inQuotes = !inQuotes;
-      } else if (char === "," && !inQuotes) {
-        values.push(current.trim());
-        current = "";
-      } else {
-        current += char;
-      }
-    }
-    values.push(current.trim());
-
-    if (values.length === headers.length) {
-      const transaction: Record<string, string> = {};
-      headers.forEach((header, index) => {
-        transaction[header] = values[index];
-      });
-      transactions.push(transaction as unknown as RawTransaction);
-    }
-  }
-
-  return transactions;
+interface LoadedFile {
+  name: string;
+  format: string;
+  transactionCount: number;
 }
 
 function calculateSummary(transactions: Transaction[]): CategorySummary[] {
@@ -82,7 +57,7 @@ export default function Home() {
   const [insights, setInsights] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [loadedFiles, setLoadedFiles] = useState<string[]>([]);
+  const [loadedFiles, setLoadedFiles] = useState<LoadedFile[]>([]);
 
   const handleFileUpload = useCallback(
     (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -91,30 +66,39 @@ export default function Home() {
 
       setError(null);
       const allTransactions: RawTransaction[] = [...rawTransactions];
-      const newFileNames: string[] = [];
+      const newFiles: LoadedFile[] = [];
+      const errors: string[] = [];
 
       let filesProcessed = 0;
 
       Array.from(files).forEach((file) => {
         const reader = new FileReader();
         reader.onload = (e) => {
-          try {
-            const text = e.target?.result as string;
-            const parsed = parseCSV(text);
-            if (parsed.length > 0) {
-              allTransactions.push(...parsed);
-              newFileNames.push(file.name);
-            }
-          } catch {
-            setError(`Failed to parse ${file.name}`);
+          const text = e.target?.result as string;
+          const result = parseCSVWithFormat(text);
+
+          if (result.success && result.format) {
+            allTransactions.push(...result.transactions);
+            newFiles.push({
+              name: file.name,
+              format: result.format.name,
+              transactionCount: result.transactions.length,
+            });
+          } else {
+            errors.push(`${file.name}: ${result.error || "Unknown error"}`);
           }
 
           filesProcessed++;
           if (filesProcessed === files.length) {
-            setRawTransactions(allTransactions);
-            setLoadedFiles((prev) => [...prev, ...newFileNames]);
-            setTransactions([]);
-            setInsights([]);
+            if (newFiles.length > 0) {
+              setRawTransactions(allTransactions);
+              setLoadedFiles((prev) => [...prev, ...newFiles]);
+              setTransactions([]);
+              setInsights([]);
+            }
+            if (errors.length > 0) {
+              setError(errors.join("\n"));
+            }
           }
         };
         reader.readAsText(file);
@@ -164,6 +148,8 @@ export default function Home() {
     .filter((s) => s.category !== "Income")
     .reduce((acc, s) => acc + s.total, 0);
 
+  const supportedFormats = getSupportedFormats();
+
   return (
     <div className="min-h-screen bg-gray-50 py-8 px-4">
       <div className="max-w-6xl mx-auto">
@@ -200,12 +186,15 @@ export default function Home() {
                 <span className="font-medium">{rawTransactions.length}</span> transactions:
               </p>
               <div className="flex flex-wrap gap-2">
-                {loadedFiles.map((name, i) => (
+                {loadedFiles.map((file, i) => (
                   <span
                     key={i}
-                    className="inline-flex items-center px-3 py-1 bg-blue-50 text-blue-700 text-sm rounded-full"
+                    className="inline-flex items-center gap-2 px-3 py-1 bg-blue-50 text-blue-700 text-sm rounded-full"
                   >
-                    {name}
+                    <span className="font-medium">{file.name}</span>
+                    <span className="text-blue-500">
+                      ({file.format} · {file.transactionCount} txns)
+                    </span>
                   </span>
                 ))}
               </div>
@@ -230,7 +219,7 @@ export default function Home() {
                   <span className="font-medium">Click to upload files</span> or drag and drop
                   <br />
                   <span className="text-sm text-gray-500">
-                    Apple Card CSV format (more formats coming soon)
+                    Supported: {supportedFormats.join(", ")}
                   </span>
                 </div>
               </div>
@@ -251,7 +240,9 @@ export default function Home() {
           )}
 
           {error && (
-            <p className="mt-3 text-sm text-red-600">{error}</p>
+            <div className="mt-3 p-3 bg-red-50 rounded-lg">
+              <p className="text-sm text-red-600 whitespace-pre-line">{error}</p>
+            </div>
           )}
         </section>
 
