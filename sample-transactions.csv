@@ -1,0 +1,14 @@
+Transaction Date,Clearing Date,Description,Merchant,Category,Type,Amount (USD)
+01/15/2024,01/16/2024,UBER TRIP,Uber,Travel,Purchase,-24.50
+01/15/2024,01/16/2024,WHOLE FOODS MARKET,Whole Foods,Food & Drink,Purchase,-87.32
+01/14/2024,01/15/2024,NETFLIX SUBSCRIPTION,Netflix,Entertainment,Purchase,-15.99
+01/14/2024,01/15/2024,SHELL GAS STATION,Shell,Gas,Purchase,-45.00
+01/13/2024,01/14/2024,AMAZON.COM,Amazon,Shopping,Purchase,-156.78
+01/12/2024,01/13/2024,STARBUCKS,Starbucks,Food & Drink,Purchase,-6.45
+01/12/2024,01/13/2024,CVS PHARMACY,CVS,Health,Purchase,-23.99
+01/11/2024,01/12/2024,SPOTIFY PREMIUM,Spotify,Entertainment,Purchase,-10.99
+01/10/2024,01/11/2024,RENT PAYMENT,Landlord LLC,Housing,Purchase,-1850.00
+01/10/2024,01/11/2024,VENMO TRANSFER,Venmo,Transfer,Purchase,-50.00
+01/09/2024,01/10/2024,CHIPOTLE MEXICAN,Chipotle,Food & Drink,Purchase,-12.85
+01/08/2024,01/09/2024,TARGET,Target,Shopping,Purchase,-67.43
+01/07/2024,01/08/2024,PAYMENT RECEIVED,Apple Card,Payment,Payment,500.00
