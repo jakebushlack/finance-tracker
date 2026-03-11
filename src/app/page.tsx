@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback } from "react";
 import {
   Transaction,
   RawTransaction,
@@ -21,22 +21,6 @@ const CATEGORY_COLORS: Record<Category, string> = {
   Transfer: "bg-gray-500",
   Other: "bg-slate-500",
 };
-
-interface DriveFile {
-  id: string;
-  name: string;
-  modifiedTime?: string;
-}
-
-interface DriveFolder {
-  id: string;
-  name: string;
-}
-
-interface DriveTokens {
-  accessToken: string;
-  refreshToken?: string;
-}
 
 function parseCSV(csvText: string): RawTransaction[] {
   const lines = csvText.trim().split("\n");
@@ -99,194 +83,6 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loadedFiles, setLoadedFiles] = useState<string[]>([]);
-
-  // Google Drive state
-  const [driveTokens, setDriveTokens] = useState<DriveTokens | null>(null);
-  const [driveFolders, setDriveFolders] = useState<DriveFolder[]>([]);
-  const [driveFiles, setDriveFiles] = useState<DriveFile[]>([]);
-  const [selectedFolderId, setSelectedFolderId] = useState<string | null>(null);
-  const [selectedFolderName, setSelectedFolderName] = useState<string | null>(null);
-  const [isLoadingDrive, setIsLoadingDrive] = useState(false);
-
-  // Check for OAuth callback tokens on mount
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const accessToken = params.get("access_token");
-    const refreshToken = params.get("refresh_token");
-    const authError = params.get("auth_error");
-
-    if (authError) {
-      setError(`Google authentication failed: ${authError}`);
-      window.history.replaceState({}, "", "/");
-      return;
-    }
-
-    if (accessToken) {
-      const tokens: DriveTokens = { accessToken, refreshToken: refreshToken || undefined };
-      setDriveTokens(tokens);
-      localStorage.setItem("drive_tokens", JSON.stringify(tokens));
-      window.history.replaceState({}, "", "/");
-    } else {
-      // Check localStorage for existing tokens
-      const stored = localStorage.getItem("drive_tokens");
-      if (stored) {
-        try {
-          setDriveTokens(JSON.parse(stored));
-        } catch {
-          localStorage.removeItem("drive_tokens");
-        }
-      }
-
-      // Load saved folder preference
-      const savedFolderId = localStorage.getItem("drive_folder_id");
-      const savedFolderName = localStorage.getItem("drive_folder_name");
-      if (savedFolderId) {
-        setSelectedFolderId(savedFolderId);
-        setSelectedFolderName(savedFolderName);
-      }
-    }
-  }, []);
-
-  // Load folders when authenticated
-  useEffect(() => {
-    if (driveTokens) {
-      loadFolders();
-    }
-  }, [driveTokens]);
-
-  // Auto-load files when folder is selected and we have tokens
-  useEffect(() => {
-    if (driveTokens && selectedFolderId) {
-      loadDriveFiles();
-    }
-  }, [driveTokens, selectedFolderId]);
-
-  const connectToDrive = async () => {
-    try {
-      const response = await fetch("/api/auth/google");
-      const data = await response.json();
-      if (data.authUrl) {
-        window.location.href = data.authUrl;
-      }
-    } catch {
-      setError("Failed to connect to Google Drive");
-    }
-  };
-
-  const disconnectDrive = () => {
-    setDriveTokens(null);
-    setDriveFolders([]);
-    setDriveFiles([]);
-    setSelectedFolderId(null);
-    setSelectedFolderName(null);
-    localStorage.removeItem("drive_tokens");
-    localStorage.removeItem("drive_folder_id");
-    localStorage.removeItem("drive_folder_name");
-  };
-
-  const loadFolders = async () => {
-    if (!driveTokens) return;
-
-    try {
-      const response = await fetch("/api/drive/folders", {
-        headers: {
-          Authorization: `Bearer ${driveTokens.accessToken}`,
-          "X-Refresh-Token": driveTokens.refreshToken || "",
-        },
-      });
-
-      if (response.status === 401) {
-        disconnectDrive();
-        setError("Google Drive session expired. Please reconnect.");
-        return;
-      }
-
-      const data = await response.json();
-      setDriveFolders(data.folders || []);
-    } catch {
-      setError("Failed to load Drive folders");
-    }
-  };
-
-  const loadDriveFiles = async () => {
-    if (!driveTokens || !selectedFolderId) return;
-
-    setIsLoadingDrive(true);
-    setError(null);
-
-    try {
-      // Get list of CSV files in folder
-      const filesResponse = await fetch(
-        `/api/drive/files?folderId=${selectedFolderId}`,
-        {
-          headers: {
-            Authorization: `Bearer ${driveTokens.accessToken}`,
-            "X-Refresh-Token": driveTokens.refreshToken || "",
-          },
-        }
-      );
-
-      if (filesResponse.status === 401) {
-        disconnectDrive();
-        setError("Google Drive session expired. Please reconnect.");
-        return;
-      }
-
-      const filesData = await filesResponse.json();
-      const files: DriveFile[] = filesData.files || [];
-      setDriveFiles(files);
-
-      if (files.length === 0) {
-        setIsLoadingDrive(false);
-        return;
-      }
-
-      // Fetch content of all CSV files
-      const contentResponse = await fetch("/api/drive/files", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${driveTokens.accessToken}`,
-          "X-Refresh-Token": driveTokens.refreshToken || "",
-        },
-        body: JSON.stringify({ fileIds: files.map((f) => f.id) }),
-      });
-
-      const contentData = await contentResponse.json();
-
-      if (contentData.files) {
-        const allTransactions: RawTransaction[] = [];
-        const fileNames: string[] = [];
-
-        for (let i = 0; i < contentData.files.length; i++) {
-          const { content } = contentData.files[i];
-          const parsed = parseCSV(content);
-          if (parsed.length > 0) {
-            allTransactions.push(...parsed);
-            fileNames.push(files[i].name);
-          }
-        }
-
-        if (allTransactions.length > 0) {
-          setRawTransactions(allTransactions);
-          setLoadedFiles(fileNames);
-          setTransactions([]);
-          setInsights([]);
-        }
-      }
-    } catch {
-      setError("Failed to load files from Google Drive");
-    } finally {
-      setIsLoadingDrive(false);
-    }
-  };
-
-  const selectFolder = (folder: DriveFolder) => {
-    setSelectedFolderId(folder.id);
-    setSelectedFolderName(folder.name);
-    localStorage.setItem("drive_folder_id", folder.id);
-    localStorage.setItem("drive_folder_name", folder.name);
-  };
 
   const handleFileUpload = useCallback(
     (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -376,89 +172,15 @@ export default function Home() {
             Personal Finance Tracker
           </h1>
           <p className="text-gray-600 mt-2">
-            Connect to Google Drive or upload CSV files to analyze spending
+            Upload your CSV statements to analyze spending with AI
           </p>
         </header>
 
-        {/* Google Drive Connection */}
+        {/* Upload Section */}
         <section className="bg-white rounded-lg shadow p-6 mb-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold text-gray-800">
-              Google Drive
-            </h2>
-            {driveTokens ? (
-              <button
-                onClick={disconnectDrive}
-                className="px-4 py-2 text-sm bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors"
-              >
-                Disconnect
-              </button>
-            ) : (
-              <button
-                onClick={connectToDrive}
-                className="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
-              >
-                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M12 0L1.5 6v12L12 24l10.5-6V6L12 0zm0 2.25l8.25 4.5v9l-8.25 4.5-8.25-4.5v-9L12 2.25z" />
-                </svg>
-                Connect to Drive
-              </button>
-            )}
-          </div>
-
-          {driveTokens && (
-            <>
-              {/* Folder Selection */}
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Select Statements Folder
-                </label>
-                <div className="flex gap-2 items-center">
-                  <select
-                    value={selectedFolderId || ""}
-                    onChange={(e) => {
-                      const folder = driveFolders.find((f) => f.id === e.target.value);
-                      if (folder) selectFolder(folder);
-                    }}
-                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  >
-                    <option value="">Choose a folder...</option>
-                    {driveFolders.map((folder) => (
-                      <option key={folder.id} value={folder.id}>
-                        {folder.name}
-                      </option>
-                    ))}
-                  </select>
-                  <button
-                    onClick={loadDriveFiles}
-                    disabled={!selectedFolderId || isLoadingDrive}
-                    className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 disabled:opacity-50 transition-colors"
-                  >
-                    {isLoadingDrive ? "Loading..." : "Refresh"}
-                  </button>
-                </div>
-                {selectedFolderName && (
-                  <p className="mt-2 text-sm text-gray-500">
-                    Watching: <span className="font-medium">{selectedFolderName}</span>
-                    {driveFiles.length > 0 && ` (${driveFiles.length} CSV files)`}
-                  </p>
-                )}
-              </div>
-            </>
-          )}
-
-          {!driveTokens && (
-            <p className="text-sm text-gray-500">
-              Connect your Google Drive to automatically load CSV statements from a folder.
-            </p>
-          )}
-        </section>
-
-        {/* Loaded Files Section */}
-        <section className="bg-white rounded-lg shadow p-6 mb-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-gray-800">
-              Statements
+              Upload Statements
             </h2>
             {loadedFiles.length > 0 && (
               <button
@@ -490,10 +212,10 @@ export default function Home() {
             </div>
           )}
 
-          {/* Manual Upload */}
+          {/* File Upload */}
           <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
             <label className="flex-1">
-              <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center cursor-pointer hover:border-gray-400 transition-colors">
+              <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center cursor-pointer hover:border-blue-400 hover:bg-blue-50 transition-colors">
                 <input
                   type="file"
                   accept=".csv"
@@ -502,10 +224,13 @@ export default function Home() {
                   className="hidden"
                 />
                 <div className="text-gray-600">
+                  <svg className="w-8 h-8 mx-auto mb-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                  </svg>
                   <span className="font-medium">Click to upload files</span> or drag and drop
                   <br />
                   <span className="text-sm text-gray-500">
-                    CSV format (Apple Card, bank statements)
+                    Apple Card CSV format (more formats coming soon)
                   </span>
                 </div>
               </div>
@@ -519,7 +244,7 @@ export default function Home() {
             </button>
           </div>
 
-          {rawTransactions.length > 0 && transactions.length === 0 && !isLoadingDrive && (
+          {rawTransactions.length > 0 && transactions.length === 0 && (
             <p className="mt-3 text-sm text-gray-600">
               {rawTransactions.length} transactions ready. Click analyze to categorize them.
             </p>
@@ -531,13 +256,11 @@ export default function Home() {
         </section>
 
         {/* Loading State */}
-        {(isLoading || isLoadingDrive) && (
+        {isLoading && (
           <div className="bg-white rounded-lg shadow p-12 mb-6 text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
             <p className="text-gray-600">
-              {isLoadingDrive
-                ? "Loading files from Google Drive..."
-                : "Claude is analyzing your transactions..."}
+              Claude is analyzing your transactions...
             </p>
           </div>
         )}

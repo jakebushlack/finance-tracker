@@ -173,7 +173,7 @@ Every new institution is messy one-off implementation.
 ## Medium (Fix When Convenient)
 
 ### TD8: Google Drive Code Removal
-**Priority:** 7 | **Status:** Not Started | **Complexity:** 2 | **Value:** 2
+**Priority:** 7 | **Status:** Fixed | **Complexity:** 2 | **Value:** 2
 
 Dead code from abandoned feature.
 
@@ -184,13 +184,13 @@ Google Drive integration exists but doesn't work (requires GCP billing).
 Confusing codebase, non-functional UI elements.
 
 #### Tasks
-- [ ] Remove src/lib/google-drive.ts
-- [ ] Remove /api/auth/google route
-- [ ] Remove /api/auth/callback route
-- [ ] Remove /api/drive routes
-- [ ] Remove Drive-related UI from page.tsx
-- [ ] Remove Drive env vars from .env.local.example
-- [ ] Update CLAUDE.md architecture diagram
+- [x] Remove src/lib/google-drive.ts
+- [x] Remove /api/auth/google route
+- [x] Remove /api/auth/callback route
+- [x] Remove /api/drive routes
+- [x] Remove Drive-related UI from page.tsx
+- [x] Remove Drive env vars from .env.local.example
+- [x] Update CLAUDE.md architecture diagram
 
 ---
 
@@ -246,4 +246,5 @@ Track when debt is added so it doesn't accumulate silently.
 
 ## Recently Fixed
 
-_None yet_
+### TD8: Google Drive Code Removal (2026-03-10)
+Removed abandoned Google Drive integration code. Files deleted: `src/lib/google-drive.ts`, `/api/auth/*`, `/api/drive/*`. UI cleaned from page.tsx.
