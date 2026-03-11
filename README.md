@@ -1,62 +1,68 @@
 # Finance Tracker
 
-A personal finance tool that analyzes Apple Card CSV exports using Claude AI. Upload your transactions to get smart categorization, spending visualizations, and AI-generated insights.
+A portfolio-grade personal finance application demonstrating full-stack development, AI integration, and fintech patterns. This is a **preview/demo application** — Plaid integration runs in sandbox mode to showcase the integration architecture without requiring production credentials.
 
-## Features
+## Project Purpose
 
-- **CSV Upload** - Drag-and-drop Apple Card transaction exports
-- **AI Categorization** - Claude automatically categorizes each transaction
-- **Spending Dashboard** - Visual breakdown by category with bar charts
-- **Smart Insights** - AI-generated observations about your spending patterns
+This project serves two goals:
+1. **Personal Tool** — A genuinely useful finance tracker for CSV-based transaction analysis
+2. **Portfolio Piece** — Demonstrates senior-level engineering skills including AI integration, third-party API patterns, and production-ready architecture
+
+## Live Features
+
+### Currently Working
+- **CSV Import** — Upload Apple Card transaction exports (multi-format support coming)
+- **AI Categorization** — Claude automatically categorizes transactions into standardized buckets
+- **Spending Dashboard** — Visual breakdown by category with bar charts
+- **Smart Insights** — AI-generated observations about spending patterns
+
+### Coming Soon
+- **User Authentication** — Clerk-based auth for persistent sessions
+- **Data Persistence** — Supabase backend for transaction history
+- **Plaid Sandbox Demo** — Full bank connection flow using Plaid's test environment
+- **Financial Profile** — Tax optimization insights based on income and contributions
 
 ## Quick Start
 
-1. **Install dependencies**
-   ```bash
-   npm install
-   ```
+```bash
+# Install dependencies
+npm install
 
-2. **Configure API key**
-   ```bash
-   cp .env.local.example .env.local
-   # Edit .env.local and add your Anthropic API key
-   ```
+# Configure environment
+cp .env.local.example .env.local
+# Edit .env.local with your Anthropic API key
 
-3. **Run development server**
-   ```bash
-   npm run dev
-   ```
+# Run development server
+npm run dev
+```
 
-4. Open [http://localhost:3000](http://localhost:3000)
+Open [http://localhost:3000](http://localhost:3000)
 
 ## Environment Variables
 
-| Variable | Description |
-|----------|-------------|
-| `ANTHROPIC_API_KEY` | Your Claude API key from [console.anthropic.com](https://console.anthropic.com) |
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `ANTHROPIC_API_KEY` | Yes | Claude API key from [console.anthropic.com](https://console.anthropic.com) |
 
 ## Tech Stack
 
-- **Framework**: Next.js 16 (App Router)
-- **Language**: TypeScript
-- **Styling**: Tailwind CSS
-- **AI**: Anthropic Claude API
+| Layer | Technology |
+|-------|------------|
+| Framework | Next.js 16 (App Router) |
+| Language | TypeScript (strict) |
+| Styling | Tailwind CSS |
+| AI | Anthropic Claude API |
+| Auth | Clerk (planned) |
+| Database | Supabase Postgres (planned) |
+| Bank Connections | Plaid Sandbox (planned) |
 
-## Project Structure
+## Project Documentation
 
-```
-src/
-├── app/
-│   ├── page.tsx              # Main UI
-│   └── api/analyze/route.ts  # Claude API integration
-└── types/index.ts            # TypeScript definitions
-```
-
-## Spending Categories
-
-Transactions are categorized into:
-- Housing, Food & Drink, Transport, Health
-- Shopping, Entertainment, Income, Transfer, Other
+| Document | Purpose |
+|----------|---------|
+| [CLAUDE.md](./CLAUDE.md) | AI agent instructions, code standards, architecture |
+| [ROADMAP.md](./ROADMAP.md) | Feature backlog with prioritization and task breakdown |
+| [TECHDEBT.md](./TECHDEBT.md) | Known issues and improvement opportunities |
 
 ## Development
 
@@ -66,9 +72,14 @@ npm run build    # Production build
 npm run lint     # Run ESLint
 ```
 
-## AI Development
+## Architecture Highlights
 
-This project is maintained with Claude Code. See [CLAUDE.md](./CLAUDE.md) for development standards, architecture details, and contribution guidelines.
+For portfolio reviewers, key architectural decisions include:
+
+- **Server-side API calls** — All Claude API calls happen in Next.js API routes, never exposing keys to the client
+- **Type-safe throughout** — Strict TypeScript with explicit interfaces for all data shapes
+- **Prompt engineering patterns** — Structured JSON output requests with fallback parsing
+- **Plaid sandbox architecture** — Demonstrates production integration patterns without requiring business relationships
 
 ## License
 
